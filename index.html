@@ -94,6 +94,11 @@ header .clock{font-variant-numeric:tabular-nums;font-size:14px;opacity:.85;}
 .sheet .gdot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background .2s,width .2s;}
 .sheet .gdot.on{background:var(--navy);width:18px;border-radius:4px;}
 .sheet .gcount{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:20px;pointer-events:none;}
+.sheet .garrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 2px 8px #0003;color:var(--ink);font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;border:none;line-height:1;}
+.sheet .garrow:hover{background:#fff;}
+.sheet .garrow.gprev{left:10px;}
+.sheet .garrow.gnext{right:10px;}
+.sheet .garrow:disabled{opacity:.3;cursor:default;}
 .imgview{position:fixed;inset:0;background:rgba(20,30,45,.86);display:flex;align-items:center;justify-content:center;z-index:140;padding:18px;}
 .imgview .imgbox{position:relative;max-width:96vw;max-height:90vh;}
 .imgview img{max-width:96vw;max-height:86vh;object-fit:contain;border-radius:16px;background:#fff;}
@@ -379,7 +384,7 @@ function openVariants(c){
   if(imgs.length>1){
     const slides=imgs.map(u=>`<div class="gslide" style="background-image:url('${u.replace(/'/g,"%27")}')"></div>`).join('');
     const dots=imgs.map((_,i)=>`<span class="gdot${i===0?' on':''}"></span>`).join('');
-    heroHtml=`<div class="gallery"><div class="gtrack">${slides}</div><div class="gcount">1/${imgs.length}</div><div class="gdots">${dots}</div></div>`;
+    heroHtml=`<div class="gallery"><div class="gtrack">${slides}</div><button class="garrow gprev" disabled>‹</button><button class="garrow gnext">›</button><div class="gcount">1/${imgs.length}</div><div class="gdots">${dots}</div></div>`;
   }else if(imgs.length===1){
     heroHtml=`<div class="hero hasimg" style="background-image:url('${imgs[0].replace(/'/g,"%27")}')"></div>`;
   }else{
@@ -400,16 +405,22 @@ function openVariants(c){
   sh.querySelector('.close').onclick=closeOv;
   const hero=sh.querySelector('.hero.hasimg');
   if(hero)hero.onclick=()=>openImageViewer(imgs[0],c.p);
-  // gallery: update dots/counter on swipe, tap a slide to zoom
+  // gallery: update dots/counter on swipe, tap a slide to zoom, arrows for desktop
   const track=sh.querySelector('.gtrack');
   if(track){
     const dots=[...sh.querySelectorAll('.gdot')];const counter=sh.querySelector('.gcount');
     const slides=[...sh.querySelectorAll('.gslide')];
-    track.addEventListener('scroll',()=>{
+    const prev=sh.querySelector('.gprev');const next=sh.querySelector('.gnext');
+    const sync=()=>{
       const idx=Math.round(track.scrollLeft/track.clientWidth);
       dots.forEach((d,i)=>d.classList.toggle('on',i===idx));
       if(counter)counter.textContent=(idx+1)+'/'+imgs.length;
-    },{passive:true});
+      if(prev)prev.disabled=idx<=0;
+      if(next)next.disabled=idx>=imgs.length-1;
+    };
+    track.addEventListener('scroll',sync,{passive:true});
+    if(prev)prev.onclick=()=>{const idx=Math.round(track.scrollLeft/track.clientWidth);track.scrollTo({left:(idx-1)*track.clientWidth,behavior:'smooth'});};
+    if(next)next.onclick=()=>{const idx=Math.round(track.scrollLeft/track.clientWidth);track.scrollTo({left:(idx+1)*track.clientWidth,behavior:'smooth'});};
     slides.forEach((sl,i)=>sl.onclick=()=>openImageViewer(imgs[i],c.p));
   }
   // tapping a variant thumbnail opens the zoom viewer instead of adding to cart
