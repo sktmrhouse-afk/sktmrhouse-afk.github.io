@@ -384,7 +384,7 @@ function openVariants(c){
   if(imgs.length>1){
     const slides=imgs.map(u=>`<div class="gslide" style="background-image:url('${u.replace(/'/g,"%27")}')"></div>`).join('');
     const dots=imgs.map((_,i)=>`<span class="gdot${i===0?' on':''}"></span>`).join('');
-    heroHtml=`<div class="gallery"><div class="gtrack">${slides}</div><button class="garrow gprev" disabled>‹</button><button class="garrow gnext">›</button><div class="gcount">1/${imgs.length}</div><div class="gdots">${dots}</div></div>`;
+    heroHtml=`<div class="gallery"><div class="gtrack">${slides}</div><button class="garrow gprev">‹</button><button class="garrow gnext">›</button><div class="gcount">1/${imgs.length}</div><div class="gdots">${dots}</div></div>`;
   }else if(imgs.length===1){
     heroHtml=`<div class="hero hasimg" style="background-image:url('${imgs[0].replace(/'/g,"%27")}')"></div>`;
   }else{
@@ -415,12 +415,17 @@ function openVariants(c){
       const idx=Math.round(track.scrollLeft/track.clientWidth);
       dots.forEach((d,i)=>d.classList.toggle('on',i===idx));
       if(counter)counter.textContent=(idx+1)+'/'+imgs.length;
-      if(prev)prev.disabled=idx<=0;
-      if(next)next.disabled=idx>=imgs.length-1;
+    };
+    const goTo=(i)=>{
+      const idx=((i%imgs.length)+imgs.length)%imgs.length; // วนลูป (wrap-around)
+      const cur=Math.round(track.scrollLeft/track.clientWidth);
+      // กระโดดข้ามขอบ (สุดท้าย→แรก หรือ แรก→สุดท้าย) เลื่อนทันที, อื่น ๆ เลื่อนแบบ smooth
+      const jump=Math.abs(idx-cur)>1;
+      track.scrollTo({left:idx*track.clientWidth,behavior:jump?'auto':'smooth'});
     };
     track.addEventListener('scroll',sync,{passive:true});
-    if(prev)prev.onclick=()=>{const idx=Math.round(track.scrollLeft/track.clientWidth);track.scrollTo({left:(idx-1)*track.clientWidth,behavior:'smooth'});};
-    if(next)next.onclick=()=>{const idx=Math.round(track.scrollLeft/track.clientWidth);track.scrollTo({left:(idx+1)*track.clientWidth,behavior:'smooth'});};
+    if(prev)prev.onclick=()=>goTo(Math.round(track.scrollLeft/track.clientWidth)-1);
+    if(next)next.onclick=()=>goTo(Math.round(track.scrollLeft/track.clientWidth)+1);
     slides.forEach((sl,i)=>sl.onclick=()=>openImageViewer(imgs[i],c.p));
   }
   // tapping a variant thumbnail opens the zoom viewer instead of adding to cart
